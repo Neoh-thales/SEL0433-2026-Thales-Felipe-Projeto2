@@ -2,12 +2,12 @@
 //        - Thales Vasconcelos Aguiar de Oliveira, NUSP: 15489730
 //
 // Projeto 2: Aferidor de temperatura de forno industrial
-// Entrega final - seleÁ„o da temperatura
+// Entrega final - sele√ß√£o da temperatura
 
-// Funcionamento do CÛdigo e do Circuito:
-// - Bot„o 1(RB0/INT0): Alterna a seleÁ„o entre contagem curta (10s) e contagem longa (60s)
-// - Bot„o 2(RB1/INT1): Inicia a contagem e a leitura de temperatura
-// - LED(RE0): Liga quando a temperatura È maior que 50 graus
+// Funcionamento do C√≥digo e do Circuito:
+// - Bot√£o 1(RB0/INT0): Alterna a sele√ß√£o entre contagem curta (10s) e contagem longa (60s)
+// - Bot√£o 2(RB1/INT1): Inicia a contagem e a leitura de temperatura
+// - LED(RE0): Liga quando a temperatura √© maior que 50 graus
 // - Display LCD mostra a temperatura na linha 1 e a contagem na linha 2
 //
 // Habilitar na aba Library Managner:
@@ -16,15 +16,15 @@
 // Componentes utilizados para o circuito:
 // - Microprocessador PIC18F4550
 // - Display LCD: Ligado na porta D (D0-D5)
-// - Bot„o 1: Ligado em RB0 (INT0) com resistor pull-down (10k ohms)
-// - Bot„o 2: Ligado em RB1 (INT1) com resistor pull-down (10k ohms)
-// - PotenciÙmetro: Ligado em AN0 (RA0), alimentado com 1V, simulando o sensor LM35
+// - Bot√£o 1: Ligado em RB0 (INT0) com resistor pull-down (10k ohms)
+// - Bot√£o 2: Ligado em RB1 (INT1) com resistor pull-down (10k ohms)
+// - Potenci√¥metro: Ligado em AN0 (RA0), alimentado com 1V, simulando o sensor LM35
 // - Vref+: Ligado em AN3 (RA3) ligado a fonte externa de 1V
 // - Vref-: Ligado em AN2 (RA2) ligado ao GND
 // - LED: Ligado em RE0 com resistor (330 ohms)
 
-// Para a seleÁ„o das entradas, o mesmo foi baseado no manual do EasyPIC
-// Como o display LCD funciona com 4 bits, ser· posto os pinos de dados e controle
+// Para a sele√ß√£o das entradas, o mesmo foi baseado no manual do EasyPIC
+// Como o display LCD funciona com 4 bits, ser√° posto os pinos de dados e controle
 // nos pinos da porta D do PIC
 sbit LCD_RS at LATD4_bit;
 sbit LCD_EN at LATD5_bit;
@@ -33,8 +33,8 @@ sbit LCD_D5 at LATD1_bit;
 sbit LCD_D6 at LATD2_bit;
 sbit LCD_D7 at LATD3_bit;
 
-// ConfiguraÁ„o da direÁ„o dos pinos
-// Tem-se 0 para SaÌda e 1 para Entrada
+// Configura√ß√£o da dire√ß√£o dos pinos
+// Tem-se 0 para Sa√≠da e 1 para Entrada
 sbit LCD_RS_Direction at TRISD4_bit;
 sbit LCD_EN_Direction at TRISD5_bit;
 sbit LCD_D4_Direction at TRISD0_bit;
@@ -42,11 +42,11 @@ sbit LCD_D5_Direction at TRISD1_bit;
 sbit LCD_D6_Direction at TRISD2_bit;
 sbit LCD_D7_Direction at TRISD3_bit;
 
-// Vari·veis de controle de tempo e display:
+// Vari√°veis de controle de tempo e display:
 
-// 1) Vetor Display: vetor string utilizado pela funÁ„o IntToStr() para armazenar
-// a convers„o dos n˙meros de tempo (int) em texto (char), fazendo com que seja
-// possÌvel mostrar os n˙meros no display LCD
+// 1) Vetor Display: vetor string utilizado pela fun√ß√£o IntToStr() para armazenar
+// a convers√£o dos n√∫meros de tempo (int) em texto (char), fazendo com que seja
+// poss√≠vel mostrar os n√∫meros no display LCD
 char vetor_tempo[10];
 
 // 2) Vetor temperatura:Vetor para formatar a temperatura do sensor de maneira
@@ -55,7 +55,7 @@ char vetor_temperatura[17];
 
 // 3) Controle do modo de contagem:
 // selecao_modo -> 0 = contagem curta (10s), 1 = contagem longa (60s)
-// O bot„o 1 alterna entre esses modos
+// O bot√£o 1 alterna entre esses modos
 int selecao_modo = 0;
 
 // 4) Controle da contagem regressiva:
@@ -63,14 +63,14 @@ int selecao_modo = 0;
 int tempo_restante = 0;
 
 // contar_1s_com_250ms: Acumula 4 estouros do Timer1 (4 x 250ms = 1s).
-// Necess·rio porque o limite do Timer1 n„o alcanÁa 1 segundo de uma ˙nica vez
+// Necess√°rio porque o limite do Timer1 n√£o alcan√ßa 1 segundo de uma √∫nica vez
 int contar_1s_com_250ms = 0;
 
-// flag_contagem_ligado -> Bit que indica se a contagem est· acontecendo,
-// n„o deixando que outro bot„o interrompa a contagem
+// flag_contagem_ligado -> Bit que indica se a contagem est√° acontecendo,
+// n√£o deixando que outro bot√£o interrompa a contagem
 bit flag_contagem_ligado;
 
-// flag_modo_timer -> Bit auxiliar para a rotina de interrupÁ„o saber
+// flag_modo_timer -> Bit auxiliar para a rotina de interrup√ß√£o saber
 // qual timer deve diminuir o tempo_restante (1 = Timer1, 0 = Timer0)
 bit flag_modo_timer;
 
@@ -94,16 +94,16 @@ unsigned long temperatura_decimais; // Temperatura com decimais (exemplo: 253 = 
 // Incrementos no timer = 500.000 / 8 = 62.500
 // Recarga = 65536 - 62500 = 3036 -> 0x0BDC
 
-// InterrupÁ„o:
+// Interrup√ß√£o:
 void Interrupt() {
 
-    // Bot„o 1 apertado (Pino RB0/INT0) - Muda o modo de contagem
+    // Bot√£o 1 apertado (Pino RB0/INT0) - Muda o modo de contagem
     if (INTCON.INT0IF == 1) {
         // Tratamento de bouncing
         Delay_ms(20);
 
         if (PORTB.RB0 == 1) {
-            // SÛ pode mudar o modo se a contagem n„o estiver acontecendo
+            // S√≥ pode mudar o modo se a contagem n√£o estiver acontecendo
             if (flag_contagem_ligado == 0) {
                 // Alterna entre modo curto (0) e modo longo (1)
                 if (selecao_modo == 0)
@@ -112,17 +112,17 @@ void Interrupt() {
                     selecao_modo = 0;
             }
         }
-        // Limpa a flag do bot„o
+        // Limpa a flag do bot√£o
         INTCON.INT0IF = 0;
     }
 
-    // Bot„o 2 apertado (Pino RB1/INT1) - ComeÁa a contagem e a medicao do sensor
+    // Bot√£o 2 apertado (Pino RB1/INT1) - Come√ßa a contagem e a medicao do sensor
     if (INTCON3.INT1IF == 1) {
         // Tratamento de bouncing
         Delay_ms(20);
 
         if (PORTB.RB1 == 1) {
-            // SÛ inicia se n„o tiver acontencendo uma contagem
+            // S√≥ inicia se n√£o tiver acontencendo uma contagem
             if (flag_contagem_ligado == 0) {
                 flag_contagem_ligado = 1;
 
@@ -134,7 +134,7 @@ void Interrupt() {
                     // Desliga Timer1
                     T1CON.TMR1ON = 0;
 
-                    // PrÈ-carrega o Timer0 para o primeiro ciclo j· ter 1s
+                    // Pr√©-carrega o Timer0 para o primeiro ciclo j√° ter 1s
                     TMR0H = 0x85;
                     TMR0L = 0xEE;
 
@@ -149,7 +149,7 @@ void Interrupt() {
                     // Desliga Timer0
                     T0CON.TMR0ON = 0;
 
-                    // PrÈ-carrega o Timer1 para o primeiro ciclo j· ter 250ms
+                    // Pr√©-carrega o Timer1 para o primeiro ciclo j√° ter 250ms
                     TMR1H = 0x0B;
                     TMR1L = 0xDC;
 
@@ -158,17 +158,17 @@ void Interrupt() {
                 }
             }
         }
-        // Limpa a flag do bot„o
+        // Limpa a flag do bot√£o
         INTCON3.INT1IF = 0;
     }
 
     // TEMPORIZADOR 0 - Estouro de 1 segundo (Contagem Longa):
 
-    // Verifica se a flag de interrupÁ„o do Timer0 foi ativada pelo hardware
+    // Verifica se a flag de interrup√ß√£o do Timer0 foi ativada pelo hardware
     if (INTCON.TMR0IF == 1) {
 
         // Recarrega os registradores do Timer0 com o valor inicial calculado (0x85EE)
-        // Garante que a prÛxima contagem de 1 segundo comece certo
+        // Garante que a pr√≥xima contagem de 1 segundo comece certo
         TMR0H = 0x85;
         TMR0L = 0xEE;
 
@@ -176,24 +176,24 @@ void Interrupt() {
             // Subtrai 1 do tempo total
             tempo_restante = tempo_restante - 1;
 
-            // Verificar se o cronÙmetro acabou
+            // Verificar se o cron√¥metro acabou
             if (tempo_restante <= 0) {
-                tempo_restante = 0; // Trava em 0 para n„o mostrar n˙meros negativos na tela
+                tempo_restante = 0; // Trava em 0 para n√£o mostrar n√∫meros negativos na tela
                 T0CON.TMR0ON = 0; // Desliga o Timer0
                 flag_contagem_ligado = 0; // Abaixa a flag, indicando que a rotina acabou
             }
         }
 
-        // Limpar a flag de interrupÁ„o para detectar o prÛximo estouro de tempo
+        // Limpar a flag de interrup√ß√£o para detectar o pr√≥ximo estouro de tempo
         INTCON.TMR0IF = 0;
     }
 
     // TEMPORIZADOR 1 - Estouro de 250 ms (Contagem Curta):
 
-    // Verifica se a flag de interrupÁ„o do Timer1 foi ativada
+    // Verifica se a flag de interrup√ß√£o do Timer1 foi ativada
     if (PIR1.TMR1IF == 1) {
         // Recarrega os registradores do Timer1 com o valor inicial (0x0BDC)
-        // para manter a precis„o de 250ms
+        // para manter a precis√£o de 250ms
         TMR1H = 0x0B;
         TMR1L = 0xDC;
 
@@ -201,10 +201,10 @@ void Interrupt() {
             // Soma 1 ao acumulador
             contar_1s_com_250ms = contar_1s_com_250ms + 1;
 
-            // Como o limite do Timer1 È pequeno, verificamos se j·
+            // Como o limite do Timer1 √© pequeno, verificamos se j√°
             // acumulamos 4 fatias de 250ms (4 * 250ms = 1000ms = 1 segundo)
             if (contar_1s_com_250ms >= 4) {
-                // Zera o acumulador para recomeÁar a contagem do prÛximo segundo
+                // Zera o acumulador para recome√ßar a contagem do pr√≥ximo segundo
                 contar_1s_com_250ms = 0;
 
                 // Subtrai 1 do tempo total restante
@@ -214,7 +214,7 @@ void Interrupt() {
                 if (tempo_restante <= 0) {
                     tempo_restante = 0; // Trava o valor em zero
                     T1CON.TMR1ON = 0; // Desliga a contagem do Timer1
-                    flag_contagem_ligado = 0; // Abaixa a flag de execuÁ„o
+                    flag_contagem_ligado = 0; // Abaixa a flag de execu√ß√£o
                 }
             }
         }
@@ -224,18 +224,18 @@ void Interrupt() {
     }
 }
 
-// FunÁ„o principal:
+// Fun√ß√£o principal:
 void main() {
 
-    // ConfiguraÁ„o dos pinos dos botıes como ENTRADA
-    TRISB.B0 = 1; // Bot„o 1 (INT0)
-    TRISB.B1 = 1; // Bot„o 2 (INT1)
+    // Configura√ß√£o dos pinos dos bot√µes como ENTRADA
+    TRISB.B0 = 1; // Bot√£o 1 (INT0)
+    TRISB.B1 = 1; // Bot√£o 2 (INT1)
 
-    // ConfiguraÁ„o do pino do LED como SAÕDA
+    // Configura√ß√£o do pino do LED como SA√çDA
     TRISE.B0 = 0; // RE0 como saida para o LED
     LATE.B0 = 0;  // LED comeca apagado
 
-    // Inicializa o mÛdulo ADC
+    // Inicializa o m√≥dulo ADC
     // O conversor ADC deve ser inicializado primeiro pelo MikroC
     // e somente depois o registrador ADCON1 deve ser configurado
     ADC_Init(); // Inicializa o modulo ADC
@@ -246,12 +246,12 @@ void main() {
     TRISA.B3 = 1; // AN3 (Vref+ ligado a 1V)
 
     // Configura o ADCON1
-    // O valor 0x3A em binario È 0011 1010, que faz o seguinte:
+    // O valor 0x3A em binario √© 0011 1010, que faz o seguinte:
     //
     // 1) Bits 5 e 4 em "11":
-    // Informa ao PIC que a tensao maxima (Vref+) È o pino AN3 (onde
-    // est· a fonte de 1V) e a tensao minima (Vref-) È o do pino AN2
-    // (onde est· o GND), garantindo que o conversor funcione no
+    // Informa ao PIC que a tensao maxima (Vref+) √© o pino AN3 (onde
+    // est√° a fonte de 1V) e a tensao minima (Vref-) √© o do pino AN2
+    // (onde est√° o GND), garantindo que o conversor funcione no
     //  intervalo do sensor LM35
     //
     // 2) Bits 3 a 0 em "1010":
@@ -272,16 +272,16 @@ void main() {
 
     // T1CON: Registrador de Controle do Timer1
     // Bit 7 (1): Habilita leitura/escrita de 16 bits
-    // Bit 6 (0): Timer1 n„o È a principal fonte de clock do sistema
-    // Bits 5-4 (11): Configura o Prescaler m·ximo do Timer1 (1:8)
+    // Bit 6 (0): Timer1 n√£o √© a principal fonte de clock do sistema
+    // Bits 5-4 (11): Configura o Prescaler m√°ximo do Timer1 (1:8)
     // Bit 3 (0): Desliga o oscilador do Timer1
-    // Bit 2 (0): SincronizaÁ„o
+    // Bit 2 (0): Sincroniza√ß√£o
     // Bit 1 (0): Usa o clock interno do sistema
     // Bit 0 (0): Inicia com o Timer1 desligado
     T1CON = 0b10110000;
 
-    // ConfiguraÁ„o das InterrupÁıes Externas
-    // NÌvel lÛgico alto indica disparo na borda de subida
+    // Configura√ß√£o das Interrup√ß√µes Externas
+    // N√≠vel l√≥gico alto indica disparo na borda de subida
     INTCON2.INTEDG0 = 1;
     INTCON2.INTEDG1 = 1;
 
@@ -293,19 +293,19 @@ void main() {
     INTCON.PEIE = 1; // Habilita interrupcoes perifericas
     INTCON.GIE = 1; // Chave geral de uso de interrupcoes
 
-    // InicializaÁ„o do LCD
+    // Inicializa√ß√£o do LCD
     Lcd_Init();
     Lcd_Cmd(_LCD_CLEAR);
     Lcd_Cmd(_LCD_CURSOR_OFF);
 
     while(1) {
-        // ConfiguraÁ„o para contagem e leitura da temperatura
+        // Configura√ß√£o para contagem e leitura da temperatura
         if (flag_contagem_ligado == 1) {
 
             // Leitura do valor do ADC no canal AN0 (potenciometro)
-            // Foi usado ADC_Get_Sample() ao invÈs de ADC_Read()
+            // Foi usado ADC_Get_Sample() ao inv√©s de ADC_Read()
             // A funcao ADC_Read() apaga as configuracoes no
-            // ADCON1 e colocaria a referÍncia em 5V. Ja o ADC_Get_Sample()
+            // ADCON1 e colocaria a refer√™ncia em 5V. Ja o ADC_Get_Sample()
             // apenas faz a leitura, respeitando a fonte de 1V (Vref+).
             valor_adc = ADC_Get_Sample(0);
 
@@ -321,7 +321,7 @@ void main() {
             // Usa unsigned long para evitar overflow
             temperatura_decimais = (unsigned long)valor_adc * 1000 / 1023;
 
-            // formataÁ„o a temperatura sem usar float
+            // formata√ß√£o a temperatura sem usar float
             vetor_temperatura[0] = (temperatura_decimais / 1000) + '0'; // Centena
 
             // Se a centena for zero (ex: 50 graus), apaga o zero da esquerda para ficar mais bonito
@@ -343,7 +343,7 @@ void main() {
 
             // Converte o tempo (int) em texto (char) para mostrar no display LCD
             IntToStr(tempo_restante, vetor_tempo);
-            Ltrim(vetor_tempo); // Remove os espaÁos ‡ esquerda
+            Ltrim(vetor_tempo); // Remove os espa√ßos √† esquerda
 
             // Mostra qual modo de contagem no display
             if (flag_modo_timer == 1) {
@@ -364,7 +364,7 @@ void main() {
                 LATE.B0 = 0; // Apaga LED
             }
 
-            Delay_ms(200); // Delay para n„o bugar a tela
+            Delay_ms(200); // Delay para n√£o bugar a tela
         }
         else {
             // Selecionando o modo de contagem
@@ -376,7 +376,7 @@ void main() {
 
             Lcd_Out(2, 1, " Aperte botao 1 ");
 
-            // Desliga o LED enquanto n„o est· em alguma contagem
+            // Desliga o LED enquanto n√£o est√° em alguma contagem
             LATE.B0 = 0;
 
             Delay_ms(200);
