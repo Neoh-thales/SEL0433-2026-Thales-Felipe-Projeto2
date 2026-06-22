@@ -1,47 +1,93 @@
-# SEL0433-2026-Thales-Felipe-Projeto2
-Projeto 2 de Aplicação de Microcontroladores
-# Projeto 2: Aferidor de Temperatura de Forno Industrial
-**Disciplina:** SEL0433 - Aplicação de Microprocessadores  
-**Aluno:** Thales Vasconcelos Aguiar de Olivera  
-**Nº USP:** 15489730
-**Aluno:**  Felipe Assis Bernardes Falvo
-**Nº USP:** 15004433
+# Aferidor de Temperatura de Forno Industrial (Baseado em PIC18F4550)
 
-## 1. Introdução
-Este repositório contém a solução final para o Projeto 2 (metodologia PBL), que consiste no desenvolvimento de um dispositivo de aferição de temperatura e tempo para fornos industriais. 
+**Disciplina:** SEL0433 - Aplicação de Microprocessadores
+ 
+**Alunos:**
+* Thales Vasconcelos Aguiar de Oliveira | NUSP: 15489730 
+* Felipe Assis Bernardes Falvo | NUSP: 15004433
 
-O sistema foi desenvolvido em linguagem C utilizando o microcontrolador **PIC18F4550**, simulado no software **SimulIDE** e compilado via **MikroC PRO for PIC**. O objetivo principal foi integrar múltiplos periféricos modernos da família PIC18, incluindo:
-* Módulo ADC de 10 bits (para leitura do sensor de temperatura LM35).
-* Timers (TMR0 e TMR1) para geração de bases de tempo precisas.
-* Sistema de Interrupções Externas (INT0 e INT1) para controle da interface humana.
-* Display LCD 16x2 operando em modo 4 bits.
+## 🚀 1. Visão Geral do Projeto 
+Esse projeto baseia-se no desenvolvimento de um sistema embarcado para o monitoramento de tempo e temperatura de um forno industrial. O sistema realiza a leitura contínua de um sensor de temperatura na faixa de 0°C a 100°C e gerencia uma contagem regressiva configurável (10 ou 60 segundos) que impede interrupções externas durante o processo de medição. 
 
-## 2. Requisitos e Implementação
-O funcionamento do equipamento baseia-se em medir a temperatura interna do forno na faixa de 0°C a 100°C e exibir uma contagem regressiva selecionável pelo usuário.
+## 🛠️ 2. Arquitetura de Hardware e I/O (Simulador SimulIDE) 
+O sistema foi validado no simulador SimulIDE, tomando como referência o Kit EasyPIC v7 com o seguinte mapeamento de periféricos:
 
-* **Interface e Controle:** Foram utilizados botões configurados com interrupção externa (borda de subida). O primeiro botão (RB0/INT0) alterna o modo de aferição entre Contagem Curta (10s) e Contagem Longa (60s). O segundo botão (RB1/INT1) atua como gatilho de início: uma vez acionado, ele inicia a contagem e a medição, travando o sistema por segurança até que o ciclo de tempo seja concluído.
-* **Medição Analógica:** A medição do sensor LM35 foi emulada utilizando um potenciômetro no pino AN0. Para garantir precisão com a escala de 10mV/°C do LM35, a tensão de referência do ADC (Vref+) foi configurada para uma fonte externa de 1V no pino AN3, e a referência negativa (Vref-) atrelada ao GND no pino AN2.
-* **Atuação:** Um LED foi alocado no pino RE0 para representar um alarme ou acionamento de resistência. O LED liga automaticamente sempre que a temperatura medida ultrapassa a marca de 50°C.
+* **RB0 (INT0):** Entrada com interrupção externa para o Botão 1. Alterna o modo de contagem entre curta e longa.
+* **RB1 (INT1):** Entrada com interrupção externa para o Botão 2. Inicia o ciclo de contagem e medição.
+* **AN0 (RA0):** Entrada analógica do canal 0. Conectada ao potenciômetro, simulando o sensor de temperatura LM35.
+* **AN3 (RA3) e AN2 (RA2):** Entradas de tensão de referência externa ($V_{ref+}$ ligada a 1V e $V_{ref-}$ ligada ao GND).
+* **RD0 a RD5:** Saídas digitais configuradas para o controle e barramento de dados do Display LCD 16x2.
+* **RE0:** Saída digital para o acionamento do LED indicador de aquecimento (represetando a resistência do forno).
 
-## 3. Breve Discussão dos Resultados
-A integração dos subsistemas apresentou desafios arquiteturais que foram contornados com práticas de programação defensiva, garantindo maior confiabilidade ao circuito. 
+## ⚙️ 3. Firmware 
+O sistema foi desenvolvido em linguagem C utilizando o microcontrolador **PIC18F4550** e compilado via **MikroC PRO for PIC**.
 
-Destaca-se a alocação do Display LCD para a Porta D, garantindo que os pinos de Interrupção Externa (INT0 e INT1) da Porta B ficassem inteiramente livres para a interface de botões. Na lógica de controle, implementou-se uma trava de estado (flag de software) no botão de "Start", impedindo interrupções acidentais ou pausas manuais durante um ciclo de medição ativo.
+### 3.1. Temporização e Bases de Tempo (Timers)
+O firmware utiliza dois temporizadores internos baseados em um cristal oscilador de 8 MHz para gerar tempos através de interrupções:
+* **Timer0:** Configurado com prescaler 1:64 e recarga inicial (`0x85EE`) para estourar a cada 1 segundo, controlando a contagem regressiva longa de 60s.
+* **Timer1:** Configurado com prescaler 1:8 e recarga inicial (`0x0BDC`) para estourar a cada 250ms. O sistema utiliza um acumulador de software que, ao atingir 4 fatias de tempo ($4 \times 250\text{ms} = 1\text{s}$), reduzindo o tempo da contagem curta de 10s.
 
-Além disso, a inicialização do conversor A/D exigiu intervenção direta no registrador `ADCON1` (recebendo o valor `0x3A`) após a chamada da biblioteca `ADC_Init()`. Isso assegurou a proteção dos pinos digitais da Porta B e a correta aplicação das tensões de referência externas. Por fim, para otimizar o uso da memória RAM do microcontrolador, o processamento da temperatura foi executado puramente com matemática de inteiros, formatando os caracteres ASCII diretamente no display LCD e eliminando o uso de variáveis do tipo `float`.
-## 4. Imagens da Simulação e Compilação
+### 3.2. Conversão A/D e Otimização Sem Float
+Para ajustar a leitura analógica à sensibilidade do sensor LM35 (10mV/°C), o registrador `ADCON1` é configurado com o valor `0x3A`. Essa linha de código deve ser executada *após* a inicialização da biblioteca (`ADC_Init()`), corrigindo um problema (visualizado pelos alunos durante o desenvolvimento do firmware) do compilador MikroC zerar os bits 4 e 5 do registrador, forçando o microcontrolador a adotar as tensões de alimentação internas ($V_{DD}$ de 5V e $V_{SS}$ de 0V) como referências do módulo A/D. 
+
+Desse modo, com a correção, o circuito passa a respeitar as fontes externas de referência de 1V ($V_{REF+}$ em AN3) e GND ($V_{REF-}$ em AN2). É importante destacar que a função convencional `ADC_Read()` possui limitações documentadas na biblioteca ADC do MikroC, visto que ela não foi projetada para trabalhar com fontes externas de tensão de referência, tendendo a redefinir o registrador para utilizar a alimentação padrão do microcontrolador ($V_{DD}$). Por isso, a leitura do potenciômetro é executada através da sub-rotina `ADC_Get_Sample(0)`, que mantém as configurações de Vref externas. 
+
+Ademais, o cálculo final da temperatura foi projetado com matemática de inteiros (`unsigned long`), extraindo centenas, dezenas e unidades para formatar e posicionar os caracteres ASCII no display ("XX.X °C"), eliminando o uso de variáveis do tipo `float`.
+
+### 3.3. Controle de Fluxo, Alarme e Interface
+O controle do sistema baseia-se em colocar os eventos críticos de entrada em uma interrupção assíncrona, enquanto o loop principal funciona em primeiro plano atualizando os periféricos de saída com base em variáveis de estado (*flags*).
+
+* **Tratamento de Interrupções e Debounce:** O Botão 1 (alternância de Modo) está relacionado à interrupção externa **INT0** (`RB0`) e o Botão 2 (inicio da contagem) à **INT1** (`RB1`). Dentro da interrupção (`void Interrupt()`), o efeito *bouncing* é resolvido através de um atraso controlado de 20 ms (`Delay_ms(20)`) seguido pela checagem do nível lógico alto do pino, validando o acionamento somente na borda de subida.
+* **Trava de Estado:** Utilizou-se uma lógica atráves do bit `flag_contagem_ligado`, no qual assim que a contagem é iniciada pelo Botão 2, essa flag é colocada para `1`. Enquanto estiver ativa, a interrupção ignora qualquer nova requisição de mudança de modo ou reinicialização dos botões, garantindo que a medição da temperatura do forno seja feita de forma segura até o fim do tempo programado.
+* **Loop Principal:** O laço de repetição `while(1)` divide o comportamento da interface em duas partes:
+  1. *Modo Configuração (`flag_contagem_ligado == 0`):* O display mostra o modo selecionado para a próxima operação ("Modo curto 10s" ou "Modo longo 60s") e solicita a interação do operador. Nessa parte, o **Botão 1** (conectado à entrada `RB0/INT0` e posicionado mais em baixo no hardware) é o responsável por alternar entre as opções de tempo. O **Botão 2** (conectado à entrada `RB1/INT1` e localizado mais em cima no circuito) é o responsável por inicia a aferição. O LED de aquecimento é mantido desligado.
+  2. *Modo Medição (`flag_contagem_ligado == 1`):* O firmware começa a ler o potenciômetro. A linha 1 do LCD é atualizada com a temperatura convertida e a linha 2 exibe o tempo restante em contagem regressiva decrementado pelos estouros dos timers.
+* **Lógica do Alarme Térmico:** No modo de medição, o sistema verifica continuamente a variável `temperatura_decimais`. Caso o valor ultrapasse o limiar de `500` (que representa 50.0°C em escala de inteiros), o pino `RE0` é acionado via registrador `LATE.B0`, ligando o LED indicador de potência da resistência do forno. Se o valor estiver abaixo, a saída é desativada.
+* **Estabilização do Display:** Foi inserido um atraso de 200 ms (`Delay_ms(200)`). Esse delay atua com o objetivo de controlar a taxa de atualização do Display LCD, impedindo oscilações visuais na tela causadas por leituras rápidas na memória.
+  
+## 💻 4. Como Simular 
+
+<img src="https://github.com/user-attachments/assets/3d1eefab-e678-4757-bfe1-aff7a91d2ae5" width="70%" alt="simulador" />
+
+1. Compile o arquivo `codigo_3.c` no **MikroC PRO for PIC** habilitando as bibliotecas no *Library Manager* para gerar o arquivo `.hex`, ou utilize o mesmo fornecido nesse repositório.
+2. Carregue o circuito abrindo o arquivo `circuito_chip.simu` no **SimulIDE**.
+3. Clique com o botão direito no microcontrolador PIC18F4550, selecione **Load Firmware** e carregue o arquivo `.hex`.
+4. Inicie a simulação clicando no botão de **Power** na barra superior.
+5. **Teste de Seleção e Execução:** Pressione o Botão 1 (conectado à entrada `RB0/INT0` e posicionado mais em baixo no hardware) para alternar no LCD entre o modo de 10s e 60s. Escolha o modo e aperte o Botão 2 (conectado à entrada `RB1/INT1` e localizado mais em cima no circuito) para começar a medição.
+6. **Teste do Sensor e Alarme:** Com a contagem ativa, gire o potenciômetro conectado a `AN0`. O display exibirá a variação de temperatura em tempo real. Caso o valor passe dos 50.0°C, o LED (conectado em `RE0`) se acenderá.
 
 
-**Compilação no MikroC (Sucesso e uso de memória):**
-<img width="1339" height="431" alt="WhatsApp Image 2026-06-21 at 23 12 45" src="https://github.com/user-attachments/assets/78752a1d-cc72-4054-ab74-f9ac523b0fac" />
-<img width="1365" height="738" alt="WhatsApp Image 2026-06-21 at 23 14 59" src="https://github.com/user-attachments/assets/027abcc9-dd31-4a6d-a713-db5889ebd3a9" />
-<img width="460" height="669" alt="WhatsApp Image 2026-06-21 at 23 14 59(1)" src="https://github.com/user-attachments/assets/150b8b7c-0fb0-45fe-a0c4-19a14166064d" />
-<img width="460" height="656" alt="WhatsApp Image 2026-06-21 at 23 14 59(2)" src="https://github.com/user-attachments/assets/821a5097-361c-42a3-bafb-f1b941a5d346" />
+## 📸 5. Registros Visuais da Execução
+
+### Compilação no MikroC (Sucesso e Uso de Memória)
+
+<img width="1339" height="431" alt="Mensagem de compilação com sucesso" src="https://github.com/user-attachments/assets/78752a1d-cc72-4054-ab74-f9ac523b0fac" />
+
+*(Passo a passo para habilitar as bibliotecas no Library Manager)*
+
+**Passo 1:** Clique na aba vertical `Library Manager` localizada no canto inferior direito da IDE.
+
+<img width="1000" alt="Aba Library Manager" src="https://github.com/user-attachments/assets/e44c4ef1-5fa5-445b-ad72-4e3e1e2d662a" />
+
+**Passo 2:** Expanda o diretório `System Libraries`.
+
+<img width="460" alt="Expandindo System Libraries" src="https://github.com/user-attachments/assets/12f708ad-59fa-46c6-b438-69335daaf9cb" />
+
+**Passo 3:** Habilite as bibliotecas marcando as caixas `ADC`, `Conversions`, `C_String`, `Lcd` e `Lcd_Constants`.
+
+<img width="460" alt="Bibliotecas Selecionadas" src="https://github.com/user-attachments/assets/65e5eb6d-62e0-44ed-8cc2-d4ad6069ad86" />
 
 
-**Execução no SimulIDE (Sistema em funcionamento):**
-<img width="1189" height="603" alt="WhatsApp Image 2026-06-21 at 23 08 56" src="https://github.com/user-attachments/assets/3d1eefab-e678-4757-bfe1-aff7a91d2ae5" />
-<img width="1198" height="581" alt="WhatsApp Image 2026-06-21 at 23 08 56(1)" src="https://github.com/user-attachments/assets/4207a4d0-9716-47e5-a0d4-f0260c318b90" />
-<img width="1181" height="566" alt="WhatsApp Image 2026-06-21 at 23 08 56(2)" src="https://github.com/user-attachments/assets/69661d29-962f-4911-84a7-b7e1d78e80bb" />
-<img width="1188" height="574" alt="WhatsApp Image 2026-06-21 at 23 08 57" src="https://github.com/user-attachments/assets/ec9653cd-264e-4fa3-9a5f-678c0082c53e" />
+### Execução no SimulIDE (Sistema em Funcionamento)
 
+*Seleção de Modo Longo (60s)*
+
+<img width="1198" height="581" alt="Seleção de modo longo" src="https://github.com/user-attachments/assets/4207a4d0-9716-47e5-a0d4-f0260c318b90" />
+
+*Contagem Ativa com Sensor a 93.3°C (LED Alarme Ligado)*
+
+<img width="1181" height="566" alt="Medição ativa a 93 graus" src="https://github.com/user-attachments/assets/69661d29-962f-4911-84a7-b7e1d78e80bb" />
+
+*Aferição Limite com Sensor a 100.0°C*
+
+<img width="1188" height="574" alt="Medição no limite de 100 graus" src="https://github.com/user-attachments/assets/ec9653cd-264e-4fa3-9a5f-678c0082c53e" />
