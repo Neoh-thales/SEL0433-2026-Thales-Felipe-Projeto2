@@ -105,3 +105,5 @@ As imagens a seguir demonstram o comportamento do firmware em tempo real, valida
 > *Comprova a estabilidade da conversão A/D no limite superior exigido pelo projeto. Colocar a tensão de referência externa ($V_{ref+}$ de 1V) no registrador `ADCON1` garante que a conversão exiba 100.0°C, acionando o LED.*
 
 <img width="1188" height="574" alt="Medição no limite de 100 graus" src="https://github.com/user-attachments/assets/ec9653cd-264e-4fa3-9a5f-678c0082c53e" />
+
+<!-- Teste de configuração global do git (2026-10-05) -->
